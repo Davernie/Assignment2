@@ -144,3 +144,17 @@ struct letterGetter (char letter){
     int letterIndex = (int) letter - 65;
     return letterArr[letterIndex];
 }
+
+char letter_index_return(struct letter *ltr, int i){
+    return ltr->morse_code[i];
+
+}
+
+void newCharAdd(int out){
+    char dash = '-';
+    char dot = '.';
+    char space = ' ';
+    char * temp = malloc ((strlen(input) +1)*sizeof(char));
+    strcpy(temp,input);
+    strncat(temp,((x == 0)? &dot (x == 1)?&dash:&space),1)
+}
