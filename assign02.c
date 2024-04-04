@@ -145,6 +145,14 @@ struct letterGetter (char letter){
     return letterArr[letterIndex];
 }
 
+void displayInfo(struct player p, struct letter l) {
+    printf("Level -  %d\n", p.currentLevel);
+    printf("Lives: %d\n", p.lives);
+    printf("Wins: %d\n" , p.currentWins);
+    printf("\n LETTER[%c] - MORSE CODE[%s]\n" , l.letter, l.morse_Code);
+}
+
+
 char letter_index_return(struct letter *ltr, int i){
     return ltr->morse_code[i];
 
