@@ -151,3 +151,17 @@ void displayInfo(struct player p, struct letter l) {
     printf("Wins: %d\n" , p.currentWins);
     printf("\n LETTER[%c] - MORSE CODE[%s]\n" , l.letter, l.morse_Code);
 }
+
+void displayWelcome() {
+    printf("            WELCOME TO GROUP 18's MORSE CODE TEACHER\\n");
+    printf("+--------------------------------------------------------------+\\n");
+    printf("You will be shown a sequence of characters and\\n");
+    printf("it's your job to input the correct corresponding morse code!\\n");
+    printf("Dots are inputed when you press the button for under a second.\\n");
+    printf("Spaces are inputed when you press the button for over a second.\\n");
+    printf("                 USE GP21 TO SELECT LEVEL\\n");
+    printf("                  \\\"-----\\\"  - LEVEL 01\\n");
+    printf("                  \\\".----\\\"  - LEVEL 02\\n");
+    printf("                  \\\"..---\\\"  - LEVEL 03\\n");
+    printf("                  \\\"...--\\\"  - LEVEL 04\\n");
+}
