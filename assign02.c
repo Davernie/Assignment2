@@ -40,14 +40,22 @@ void asm_gpio_set_irq(uint pin) {
     gpio_set_irq_enabled(pin, GPIO_IRQ_EDGE_RISE, true);
 }
 
+void reset_watchdog() {
+    watchdog_update();
+}
+
 /*
  * Main entry point for the code - simply calls the main assembly function.
  */
 int main() {
     timer_hw->dbgpause = 0; //this is just here for the timer to work properly when debugging with openocd. It can be removed when not in debug mode
     stdio_init_all();              // Initialise all basic IO
+    watchdog_reboot(0, 0, 0x7fffff);
+    watchdog_enable(0x7fffff, false);
+    watchdog_start_tick(12);
     main_asm();
 
+    printf("TEST: Starting Program");
     printf("%d", gpio_get_next_input());
 
     while(true) {}

@@ -91,11 +91,11 @@ gpio_get_next_input:
     .type gpio_press_handler %function
 gpio_press_handler:
     PUSH {R4-R6, LR}
-
-    LDR  R4, =GPIO_INPUT_BUTTON
+    LDR  R0, =GPIO_INPUT_BUTTON
     BL   asm_gpio_get
     CMP  R0, GPIO_BUTTON_VAL_ON     @ on means falling edge
     BNE  .LElseIfReleased
+    BL   reset_watchdog
     LDR  R4, =time_at_button_press
     LDR  R5, =(TIMER_BASE + TIMER_TIMELR_OFFSET)@ address of lower half of current time
     LDR  R5, [R5]                               @ R5 now holds the lower half of the current time
