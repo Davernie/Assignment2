@@ -9,6 +9,11 @@
 //#include "ws2812.pio.h"
 #include "hardware/watchdog.h"
 
+const char* LEVEL_ONE = "-----";
+const char* LEVEL_TWO = ".----";
+const char* LEVEL_THREE = "..---";
+const char* LEVEL_FOUR = "...--";
+
 // Must declare the main assembly entry point before use.
 void main_asm();
 
@@ -40,20 +45,11 @@ void asm_gpio_set_irq(uint pin) {
     gpio_set_irq_enabled(pin, GPIO_IRQ_EDGE_RISE, true);
 }
 
-/*
- * Main entry point for the code - simply calls the main assembly function.
- */
-int main() {
-    timer_hw->dbgpause = 0; //this is just here for the timer to work properly when debugging with openocd. It can be removed when not in debug mode
-    stdio_init_all();              // Initialise all basic IO
-    main_asm();
-
-    printf("%d", gpio_get_next_input());
-
-    while(true) {}
-
-    return(0);
+void reset_watchdog() {
+    watchdog_update();
 }
+
+
 
 struct player
 {
@@ -69,6 +65,17 @@ void playerReset(struct player * player){
     player->completeLevels = 0;
     player->currentWins = 0;
     player->gameComplete = false;
+}
+
+struct player newPlayer() {
+    struct player * newPlayer = malloc(sizeof(struct player));
+    player->lives = malloc(sizeof(int));
+    player->currentLevel = malloc(sizeof(int));
+    player->completeLevels = malloc(sizeof(int));
+    player->currentWins = malloc(sizeof(int));
+    player->gameComplete = malloc(sizeof(bool));
+
+
 }
 
 struct letter{
@@ -166,6 +173,64 @@ void displayWelcome() {
     printf("                  \\\"...--\\\"  - LEVEL 04\\n");
 }
 
+
+char* getMorse() {
+
+}
+
+char characterFromMorse(char* userInput) {
+
+}
+
+void playLevel(int levelNo) {
+    struct player currentPlayer = newPlayer();
+    char currentChar = (rand() % 26) + 'A';
+    struct letter currentLetter = letterGetter(currentChar);
+    if(levelNo <= 2) {
+        printf("Letter: %c\nMorse Code: %s\n", currentLetter.letter, (levelNo==1)?currentLetter.morse_Code:"HIDDEN");
+        char* userInput = getMorse();
+        printf("You enterred: %c\n", characterFromMorse(userInput));
+        if(strcmp(userInput, currentLetter.morse_Code) == 0) {
+            if(currentPlayer.lives < 3)
+                currentPlayer.lives++;
+            currentPlayer.currentWins++;
+            if(currentPlayer.currentWins >= 5) {
+                //player wins.
+            }
+        } else {
+            currentPlayer.lives--;
+            //update RGB
+            if(currentPlayer.lives <= 0) {
+                //player loses
+            }
+        }
+            
+    } else { 
+        printf(""); //levels 3 and four
+    }
+}
+
+bool selectLevel() {
+    struct player currentPlayer = newPlayer();
+    char* levelInput = getMorse();
+    if(strcmp(levelInput, LEVEL_ONE) == 0)
+        playLevel(1);
+    else if(strcmp(levelInput, LEVEL_TWO) == 0)
+        playLevel(2);
+    else if(strcmp(levelInput, LEVEL_THREE) == 0)
+        playLevel(3);
+    else if(strcmp(levelInput, LEVEL_FOUR) == 0)
+        playLevel(4);
+    else
+        return false;
+    return true;
+
+}
+
+
+
+
+
 void rgbLights(struct player p){
     if(p.lives==3)
     {
@@ -188,4 +253,22 @@ void rgbLights(struct player p){
 void rgbOff()
 {
     put_pixel(urgb_u32(0x00, 0x00, 0x00));
+}
+
+/*
+ * Main entry point for the code - simply calls the main assembly function.
+ */
+int main() {
+    timer_hw->dbgpause = 0; //this is just here for the timer to work properly when debugging with openocd. It can be removed when not in debug mode
+    stdio_init_all();              // Initialise all basic IO
+    watchdog_reboot(0, 0, 0x7fffff);
+    watchdog_enable(0x7fffff, false);
+    watchdog_start_tick(12);
+    main_asm();
+
+    displayWelcome();
+    while(!selectLevel());
+
+
+    return(0);
 }
