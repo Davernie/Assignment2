@@ -187,21 +187,28 @@ char* getMorse() {
     while (1)
     {
         button_press_duration = 0;  // Get the duration of the button press
+        int space = 0;
 
         if (button_press_duration <= DOT_DURATION && button_press_duration >= 0) {
+            if(space == 1){
+                strcat(morse_sequence, " ");
+                space = 0;
+            }
             strcat(morse_sequence, ".");
             start_t = clock(); //reset the timer
         } else if (button_press_duration <= DASH_DURATION) {
+            if(space == 1){
+                strcat(morse_sequence, " ");
+                space = 0;
+            }
             strcat(morse_sequence, "-");
             start_t = clock();//reset the timer
         } else {
             end_t = clock();
             if ((end_t - start_t) >= SPACE_DURATION) {
-                strcat(morse_sequence, " ");
+                space = 1;
             }
-        
-            else if ((end_t - start_t) >= COMPLETE_DURATION) 
-            {
+            if ((end_t - start_t) >= COMPLETE_DURATION) {
                 printf("Morse sequence complete: %s\n", morse_sequence);
                 return morse_sequence;
             }  
