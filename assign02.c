@@ -173,6 +173,7 @@ void displayWelcome() {
     printf("                  \\\"...--\\\"  - LEVEL 04\\n");
 }
 
+
 char* getMorse() {
 
 }
@@ -227,6 +228,32 @@ bool selectLevel() {
 }
 
 
+
+
+
+void rgbLights(struct player p){
+    if(p.lives==3)
+    {
+        put_pixel(urgb_u32(0x00, 0xFF, 0x00)); //green
+    }
+    else if(p.lives==2)
+    {
+        put_pixel(urgb_u32(0xFF, 0xFF, 0x00)); //yellow
+    }
+    else if(p.lives==1)
+    {
+        put_pixel(urgb_u32(0xFF, 0x80, 0x00)); //orange
+    }
+    else if(p.lives==0)
+    {
+        put_pixel(urgb_u32(0xFF, 0x00, 0x00));//red
+    }
+}
+
+void rgbOff()
+{
+    put_pixel(urgb_u32(0x00, 0x00, 0x00));
+}
 
 /*
  * Main entry point for the code - simply calls the main assembly function.
