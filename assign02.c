@@ -175,12 +175,51 @@ void displayWelcome() {
 
 
 char* getMorse() {
+    const int DOT_DURATION = 500;
+    const int DASH_DURATION = 1500;
+    const int SPACE_DURATION = 1000;
+    const int COMPLETE_DURATION = 2000;
+    static char morse_sequence[100];  // Initialize an empty string to hold the Morse code sequence
+    int button_press_duration;
+    clock_t start_t, end_t;
 
+    start_t = clock();
+    while (1)
+    {
+        button_press_duration = 0;  // Get the duration of the button press
+
+        if (button_press_duration <= DOT_DURATION && button_press_duration >= 0) {
+            strcat(morse_sequence, ".");
+            start_t = clock(); //reset the timer
+        } else if (button_press_duration <= DASH_DURATION) {
+            strcat(morse_sequence, "-");
+            start_t = clock();//reset the timer
+        } else {
+            end_t = clock();
+            if ((end_t - start_t) >= SPACE_DURATION) {
+                strcat(morse_sequence, " ");
+            }
+        
+            else if ((end_t - start_t) >= COMPLETE_DURATION) 
+            {
+                printf("Morse sequence complete: %s\n", morse_sequence);
+                return morse_sequence;
+            }  
+        }         
+    }
 }
 
 char characterFromMorse(char* userInput) {
-
+    int i;
+    for(i = 0; i < 26; i++) {
+        if(strcmp(userInput, letterArr[i].morse_Code) == 0) {
+            return letterArr[i].letter;
+        }
+    }
+    // Return space character if no match found
+    return ' ';
 }
+
 
 void playLevel(int levelNo) {
     struct player currentPlayer = newPlayer();
