@@ -186,7 +186,7 @@ char* getMorse() {
     start_t = clock();
     while (1)
     {
-        button_press_duration = 0;  // Get the duration of the button press
+        button_press_duration = gpio_get_next_input;  // Get the duration of the button press
         int space = 0;
 
         if (button_press_duration <= DOT_DURATION && button_press_duration >= 0) {
