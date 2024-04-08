@@ -6,8 +6,13 @@
 #include <string.h>
 #include "hardware/pio.h"
 #include "hardware/clocks.h"
-#include "ws2812.pio.h"
+//#include "ws2812.pio.h"
 #include "hardware/watchdog.h"
+
+const char* LEVEL_ONE = "-----";
+const char* LEVEL_TWO = ".----";
+const char* LEVEL_THREE = "..---";
+const char* LEVEL_FOUR = "...--";
 
 // Must declare the main assembly entry point before use.
 void main_asm();
@@ -40,20 +45,11 @@ void asm_gpio_set_irq(uint pin) {
     gpio_set_irq_enabled(pin, GPIO_IRQ_EDGE_RISE, true);
 }
 
-/*
- * Main entry point for the code - simply calls the main assembly function.
- */
-int main() {
-    timer_hw->dbgpause = 0; //this is just here for the timer to work properly when debugging with openocd. It can be removed when not in debug mode
-    stdio_init_all();              // Initialise all basic IO
-    main_asm();
-
-    printf("%d", gpio_get_next_input());
-
-    while(true) {}
-
-    return(0);
+void reset_watchdog() {
+    watchdog_update();
 }
+
+
 
 struct player
 {
@@ -62,7 +58,7 @@ struct player
     int completeLevels;
     int currentWins;
     bool gameComplete;
-}
+};
 void playerReset(struct player * player){
     player->lives = 3;
     player->currentLevel = 0;
@@ -71,76 +67,87 @@ void playerReset(struct player * player){
     player->gameComplete = false;
 }
 
+struct player newPlayer() {
+    struct player * newPlayer = malloc(sizeof(struct player));
+    player->lives = malloc(sizeof(int));
+    player->currentLevel = malloc(sizeof(int));
+    player->completeLevels = malloc(sizeof(int));
+    player->currentWins = malloc(sizeof(int));
+    player->gameComplete = malloc(sizeof(bool));
+
+
+}
+
 struct letter{
     char letter;
     char *morse_Code;
-}
+};
 
 struct letter newLetter(char letter, char *morse_Code){
     struct letter new;
     new.letter = letter;
     new.morse_Code = morse_Code;
     return new;
-}
+};
 
 struct letter letterArr[26];
 
-void new_Letter_Array;{
+void new_Letter_Array(){
     // A
-    letterArr[0] = newLetter('A', '.-');
+    letterArr[0] = newLetter('A', ".-");
     // B
-    letterArr[1] = newLetter('B', '-...');
+    letterArr[1] = newLetter('B', "-...");
     // C
-    letterArr[2] = newLetter('C', '-.-.');
+    letterArr[2] = newLetter('C', "-.-.");
     // D
-    letterArr[3] = newLetter('D', '-..');
+    letterArr[3] = newLetter('D', "-..");
     // E
-    letterArr[4] = newLetter('E', '.');
+    letterArr[4] = newLetter('E', ".");
     // F
-    letterArr[5] = newLetter('F', '..-.');
+    letterArr[5] = newLetter('F', "..-.");
     // G
-    letterArr[6] = newLetter('G', '--.');
+    letterArr[6] = newLetter('G', "--.");
     // H
-    letterArr[7] = newLetter('H', '....');
+    letterArr[7] = newLetter('H', "....");
     // I
-    letterArr[8] = newLetter('I', '..');
+    letterArr[8] = newLetter('I', "..");
     // J
-    letterArr[9] = newLetter('J', '.---');
+    letterArr[9] = newLetter('J', ".---");
     // K
-    letterArr[10] = newLetter('K', '-.-');
+    letterArr[10] = newLetter('K', "-.-");
     // L
-    letterArr[11] = newLetter('L', '.-..');
+    letterArr[11] = newLetter('L', ".-..");
     // M
-    letterArr[12] = newLetter('M', '--');
+    letterArr[12] = newLetter('M', "--");
     // N
-    letterArr[13] = newLetter('N', '-.');
+    letterArr[13] = newLetter('N', "-.");
     // O
-    letterArr[14] = newLetter('O', '---');
+    letterArr[14] = newLetter('O', "---");
     // P
-    letterArr[15] = newLetter('P', '.--.');
+    letterArr[15] = newLetter('P', ".--.");
     // Q
-    letterArr[16] = newLetter('Q', '--.-');
+    letterArr[16] = newLetter('Q', "--.-");
     // R
-    letterArr[17] = newLetter('R', '.-.');
+    letterArr[17] = newLetter('R', ".-.");
     // S
-    letterArr[18] = newLetter('S', '...');
+    letterArr[18] = newLetter('S', "...");
     // T
-    letterArr[19] = newLetter('T', '-');
+    letterArr[19] = newLetter('T', "-");
     // U
-    letterArr[20] = newLetter('U', '..-');
+    letterArr[20] = newLetter('U', "..-");
     // V
-    letterArr[21] = newLetter('V', '...-');
+    letterArr[21] = newLetter('V', "...-");
     // W
-    letterArr[22] = newLetter('W', '.--');
+    letterArr[22] = newLetter('W', ".--");
     // X
-    letterArr[23] = newLetter('X', '-..-');
+    letterArr[23] = newLetter('X', "-..-");
     // Y
-    letterArr[24] = newLetter('Y', '-.--');
+    letterArr[24] = newLetter('Y', "-.--");
     // Z
-    letterArr[25] = newLetter('Z', '--..');
-}
+    letterArr[25] = newLetter('Z', "--..");
+};
 
-struct letterGetter (char letter){
+struct letter letterGetter (char letter) {
     int letterIndex = (int) letter - 65;
     return letterArr[letterIndex];
 }
@@ -164,4 +171,77 @@ void displayWelcome() {
     printf("                  \\\".----\\\"  - LEVEL 02\\n");
     printf("                  \\\"..---\\\"  - LEVEL 03\\n");
     printf("                  \\\"...--\\\"  - LEVEL 04\\n");
+}
+
+char* getMorse() {
+
+}
+
+char characterFromMorse(char* userInput) {
+
+}
+
+void playLevel(int levelNo) {
+    struct player currentPlayer = newPlayer();
+    char currentChar = (rand() % 26) + 'A';
+    struct letter currentLetter = letterGetter(currentChar);
+    if(levelNo <= 2) {
+        printf("Letter: %c\nMorse Code: %s\n", currentLetter.letter, (levelNo==1)?currentLetter.morse_Code:"HIDDEN");
+        char* userInput = getMorse();
+        printf("You enterred: %c\n", characterFromMorse(userInput));
+        if(strcmp(userInput, currentLetter.morse_Code) == 0) {
+            if(currentPlayer.lives < 3)
+                currentPlayer.lives++;
+            currentPlayer.currentWins++;
+            if(currentPlayer.currentWins >= 5) {
+                //player wins.
+            }
+        } else {
+            currentPlayer.lives--;
+            //update RGB
+            if(currentPlayer.lives <= 0) {
+                //player loses
+            }
+        }
+            
+    } else { 
+        printf(""); //levels 3 and four
+    }
+}
+
+bool selectLevel() {
+    struct player currentPlayer = newPlayer();
+    char* levelInput = getMorse();
+    if(strcmp(levelInput, LEVEL_ONE) == 0)
+        playLevel(1);
+    else if(strcmp(levelInput, LEVEL_TWO) == 0)
+        playLevel(2);
+    else if(strcmp(levelInput, LEVEL_THREE) == 0)
+        playLevel(3);
+    else if(strcmp(levelInput, LEVEL_FOUR) == 0)
+        playLevel(4);
+    else
+        return false;
+    return true;
+
+}
+
+
+
+/*
+ * Main entry point for the code - simply calls the main assembly function.
+ */
+int main() {
+    timer_hw->dbgpause = 0; //this is just here for the timer to work properly when debugging with openocd. It can be removed when not in debug mode
+    stdio_init_all();              // Initialise all basic IO
+    watchdog_reboot(0, 0, 0x7fffff);
+    watchdog_enable(0x7fffff, false);
+    watchdog_start_tick(12);
+    main_asm();
+
+    displayWelcome();
+    while(!selectLevel());
+
+
+    return(0);
 }
