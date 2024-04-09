@@ -460,7 +460,7 @@ int main() {
     main_asm();
 
     new_Letter_Array();
-    new_Number_Array();
+
     //testMorseInput();
 
 //    char * userInput = getMorseInput();
