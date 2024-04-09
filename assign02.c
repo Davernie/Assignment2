@@ -6,8 +6,9 @@
 #include <string.h>
 #include "hardware/pio.h"
 #include "hardware/clocks.h"
-//#include "ws2812.pio.h"
+//#include "ws2812.pio"
 #include "hardware/watchdog.h"
+#include <stdlib.h>
 
 const char* LEVEL_ONE = "-----";
 const char* LEVEL_TWO = ".----";
@@ -18,6 +19,27 @@ const char* LEVEL_FOUR = "...--";
 void main_asm();
 
 int gpio_get_next_input();
+
+static inline void put_pixel(uint32_t pixel_grb) {
+    pio_sm_put_blocking(pio0, 0, pixel_grb << 8u);
+}
+
+
+/**
+ * @brief Function to generate an unsigned 32-bit composit GRB
+ *        value by combining the individual 8-bit paramaters for
+ *        red, green and blue together in the right order.
+ * 
+ * @param r     The 8-bit intensity value for the red component
+ * @param g     The 8-bit intensity value for the green component
+ * @param b     The 8-bit intensity value for the blue component
+ * @return uint32_t Returns the resulting composit 32-bit RGB value
+ */
+static inline uint32_t urgb_u32(uint8_t r, uint8_t g, uint8_t b) {
+    return  ((uint32_t) (r) << 8)  |
+            ((uint32_t) (g) << 16) |
+            (uint32_t) (b);
+}
 
 // Initialise a GPIO pin – see SDK for detail on gpio_init()
 void asm_gpio_init(uint pin) {
@@ -67,14 +89,10 @@ void playerReset(struct player * player){
     player->gameComplete = false;
 }
 
-struct player newPlayer() {
+struct player * newPlayer() {
     struct player * newPlayer = malloc(sizeof(struct player));
-    player->lives = malloc(sizeof(int));
-    player->currentLevel = malloc(sizeof(int));
-    player->completeLevels = malloc(sizeof(int));
-    player->currentWins = malloc(sizeof(int));
-    player->gameComplete = malloc(sizeof(bool));
 
+    return newPlayer;
 
 }
 
@@ -160,17 +178,17 @@ void displayInfo(struct player p, struct letter l) {
 }
 
 void displayWelcome() {
-    printf("            WELCOME TO GROUP 18's MORSE CODE TEACHER\\n");
-    printf("+--------------------------------------------------------------+\\n");
+    printf("            WELCOME TO GROUP 18's MORSE CODE TEACHER\n");
+    printf("+--------------------------------------------------------------+\n");
     printf("You will be shown a sequence of characters and\\n");
-    printf("it's your job to input the correct corresponding morse code!\\n");
-    printf("Dots are inputed when you press the button for under a second.\\n");
-    printf("Spaces are inputed when you press the button for over a second.\\n");
-    printf("                 USE GP21 TO SELECT LEVEL\\n");
-    printf("                  \\\"-----\\\"  - LEVEL 01\\n");
-    printf("                  \\\".----\\\"  - LEVEL 02\\n");
-    printf("                  \\\"..---\\\"  - LEVEL 03\\n");
-    printf("                  \\\"...--\\\"  - LEVEL 04\\n");
+    printf("it's your job to input the correct corresponding morse code!\n");
+    printf("Dots are inputed when you press the button for under a second.\n");
+    printf("Spaces are inputed when you press the button for over a second.\n");
+    printf("                 USE GP21 TO SELECT LEVEL\n");
+    printf("                  \"-----\"  - LEVEL 01\n");
+    printf("                  \".----\"  - LEVEL 02\n");
+    printf("                  \"..---\"  - LEVEL 03\n");
+    printf("                  \"...--\"  - LEVEL 04\n");
 }
 
 
@@ -228,8 +246,8 @@ char characterFromMorse(char* userInput) {
 }
 
 
-void playLevel(int levelNo) {
-    struct player currentPlayer = newPlayer();
+bool playLevel(int levelNo) {
+    struct player currentPlayer = *newPlayer();
     char currentChar = (rand() % 26) + 'A';
     struct letter currentLetter = letterGetter(currentChar);
     if(levelNo <= 2) {
@@ -237,27 +255,38 @@ void playLevel(int levelNo) {
         char* userInput = getMorse();
         printf("You enterred: %c\n", characterFromMorse(userInput));
         if(strcmp(userInput, currentLetter.morse_Code) == 0) {
-            if(currentPlayer.lives < 3)
+            if(currentPlayer.lives < 3) {
                 currentPlayer.lives++;
+                rgbLights(currentPlayer);
+            }
             currentPlayer.currentWins++;
             if(currentPlayer.currentWins >= 5) {
-                //player wins.
+                if(levelNo >= 4) {
+                    printf("You Win!\n");
+                    return true;
+                } else {
+                    return playLevel(levelNo+1);
+                }
             }
         } else {
             currentPlayer.lives--;
-            //update RGB
+            rgbLights(currentPlayer);
             if(currentPlayer.lives <= 0) {
-                //player loses
+                printf("Game Over\n");
+                return false;
             }
         }
             
     } else { 
-        printf(""); //levels 3 and four
+        char* currentWord;
+        char* currentWordMorse;
+        printf("Word: %s\nMorse Code: %s\n", currentWord, (levelNo==1)?currentLetter.morse_Code:"HIDDEN");
     }
+    return true;
 }
 
 bool selectLevel() {
-    struct player currentPlayer = newPlayer();
+    struct player currentPlayer = *newPlayer();
     char* levelInput = getMorse();
     if(strcmp(levelInput, LEVEL_ONE) == 0)
         playLevel(1);
