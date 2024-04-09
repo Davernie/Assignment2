@@ -73,8 +73,6 @@ void reset_watchdog() {
     watchdog_update();
 }
 
-
-
 struct player
 {
     int lives;
@@ -113,9 +111,6 @@ struct letter newLetter(char letter, char *morse_Code){
     new.morse_Code = morse_Code;
     return new;
 };
-
-
-
 
 struct number{
     char number;
@@ -206,24 +201,6 @@ struct letter letterGetter (char letter) {
     return letterArr[letterIndex];
 }
 
-//Generate Word, take a word from a list
-char* generateWord(){
-
-    int index = rand() % WORD_LIST_LEN;
-    return WORD_LIST[index];
-}
-
-char* wordtoMorse(char* word){
-    char* morse_word = malloc(sizeof(char)*40);
-    
-    for(int i = 0; i < 6; i++){
-        strcat(morse_word,letterGetter(word[i]).morse_Code);
-        
-    
-    }
-    return morse_word;
-}
-
 void displayInfo(struct player p, struct letter l) {
     printf("Level -  %d\n", p.currentLevel);
     printf("Lives: %d\n", p.lives);
@@ -256,9 +233,11 @@ char* getMorseInput() {
         currentChar = gpio_get_next_input();
         printf("%c", currentChar);
         if(prevChar == ' ' && currentChar == ' ') 
-            endOfString = true;
-        else
-            strncat(userInput, &currentChar, 1);
+            endOfString = (strlen(userInput) > 0); // end string assuming at least one character enterred
+        else {
+            if(strlen(userInput) > 0 || currentChar != ' ')
+                strncat(userInput, &currentChar, 1);
+        }
 
     }
     userInput[strlen(userInput)-1]='\0'; //remove extra space from end
@@ -326,62 +305,67 @@ char* generateWord(){
     return WORD_LIST[index];
 }
 
-bool playLevel(int levelNo) {
+bool playLevel(int levelNo, struct player currentPlayer) {
     printf("\nPLAYING LEVEL %d\n", levelNo);
-    struct player currentPlayer = *newPlayer();
-    char currentChar = (rand() % 26) + 'A';
-    struct letter currentLetter = letterGetter(currentChar);
-    if(levelNo <= 2) {
-        printf("Letter: %c\nMorse Code: %s\n", currentLetter.letter, (levelNo==1)?currentLetter.morse_Code:"HIDDEN");
-        char* userInput = getMorse();
-        printf("You enterred: %c\n", characterFromMorse(userInput));
-        if(strcmp(userInput, currentLetter.morse_Code) == 0) {
-            if(currentPlayer.lives < 3) {
-                currentPlayer.lives++;
-                rgbLights(currentPlayer);
-            }
-            currentPlayer.currentWins++;
-            currentPlayer.totalWins++;
-            if(currentPlayer.currentWins >= 5) {
-                if(levelNo >= 4) {
-                    printf("You Win!\n");
+    while(true) {   // run this until we return
+        printf("Lives: %d\n", currentPlayer.lives);
+        //rgbLights(currentPlayer);
+        if(levelNo <= 2) {
+            char currentChar = (rand() % 26) + 'A';
+            struct letter currentLetter = letterGetter(currentChar);
+            printf("Letter: %c\nMorse Code: %s\n", currentChar, (levelNo==1)?currentLetter.morse_Code:"HIDDEN");
+            char* userInput = getMorseInput();
+            printf("You enterred: %c\n", characterFromMorse(userInput));
+            if(strcmp(userInput, currentLetter.morse_Code) == 0) {
+                currentPlayer.currentWins++;
+                currentPlayer.totalWins++;
+                printf("CORRECT, %d in a row\n", currentPlayer.currentWins);
+                if(currentPlayer.lives < 3) {
+                    currentPlayer.lives++;
+                    rgbLights(currentPlayer);
+                }
+                if(currentPlayer.currentWins >= 5) {
+                    if(levelNo >= 4) {
+                        printf("You Win!\n");
+                        printStats(currentPlayer);
+                        return true;
+                    } else {
+                        return playLevel(levelNo+1, currentPlayer);
+                    }
+                }
+            } else {
+                currentPlayer.lives--;
+                currentPlayer.currentWins = 0;
+                currentPlayer.totalLoses++;
+            //    rgbLights(currentPlayer);
+                if(currentPlayer.lives <= 0) {
+                    printf("Game Over\n");
                     printStats(currentPlayer);
-                    return true;
-                } else {
-                    return playLevel(levelNo+1);
+                    return false;
                 }
             }
-        } else {
-            currentPlayer.lives--;
-            currentPlayer.currentWins = 0;
-            currentPlayer.totalLoses++:
-            rgbLights(currentPlayer);
-            if(currentPlayer.lives <= 0) {
-                printf("Game Over\n");
-                printStats(currentPlayer);
-                return false;
-            }
+                
+        } else { 
+            char* currentWord = generateWord();
+            char* currentWordMorse;
+            //printf("Word: %s\nMorse Code: %s\n", currentWord, (levelNo==1)?currentLetter.morse_Code:"HIDDEN");
         }
-            
-    } else { 
-        char* currentWord = generateWord();
-        char* currentWordMorse;
-        printf("Word: %s\nMorse Code: %s\n", currentWord, (levelNo==1)?currentLetter.morse_Code:"HIDDEN");
     }
     return true;
 }
 
 bool selectLevel() {
     struct player currentPlayer = *newPlayer();
+    playerReset(&currentPlayer);
     char* levelInput = getMorseInput();
     if(strcmp(levelInput, LEVEL_ONE) == 0)
-        playLevel(1);
+        playLevel(1, currentPlayer);
     else if(strcmp(levelInput, LEVEL_TWO) == 0)
-        playLevel(2);
+        playLevel(2, currentPlayer);
     else if(strcmp(levelInput, LEVEL_THREE) == 0)
-        playLevel(3);
+        playLevel(3, currentPlayer);
     else if(strcmp(levelInput, LEVEL_FOUR) == 0)
-        playLevel(4);
+        playLevel(4, currentPlayer);
     else {
         printf("Invalid level code %s, try again\n", levelInput);
         return false;
@@ -436,6 +420,7 @@ void testMorseInput() {
         char currentChar = gpio_get_next_input();
         printf("%c", currentChar);
     }
+}
 
 void printStats(struct player p){
     printf("Total Correct Answers: %d\n", p.totalWins);
@@ -455,6 +440,8 @@ int main() {
     watchdog_start_tick(12);
     main_asm();
 
+    new_Letter_Array();
+    new_Number_Array();
     //testMorseInput();
 
 //    char * userInput = getMorseInput();
