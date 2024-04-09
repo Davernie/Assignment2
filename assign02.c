@@ -14,7 +14,7 @@ const char* LEVEL_ONE = "-----";
 const char* LEVEL_TWO = ".----";
 const char* LEVEL_THREE = "..---";
 const char* LEVEL_FOUR = "...--";
-const char* WORD_LIST[] = {"come", "gets", "give", "gone", "keep", "lets", "make", "puts"};
+const char* WORD_LIST[] = {"COME", "GETS", "GIVE", "GONE", "KEEP", "LETS", "MAKE", "PUTS"};
 const int WORD_LIST_LEN = 8;
 
 // Must declare the main assembly entry point before use.
@@ -305,6 +305,19 @@ char* generateWord(){
     return WORD_LIST[index];
 }
 
+char* wordtoMorse(char* word){
+    char* morse_word = malloc(sizeof(char)*100);
+    morse_word[0] = '\0';
+    
+    for(int i = 0; i < 4; i++){
+        char * letterMorse = letterGetter(word[i]).morse_Code;
+        strcat(morse_word, letterMorse);
+        if(i < 3)
+            strcat(morse_word," ");
+    }
+    return morse_word;
+} 
+
 bool playLevel(int levelNo, struct player currentPlayer) {
     printf("\nPLAYING LEVEL %d\n", levelNo);
     while(true) {   // run this until we return
@@ -346,9 +359,39 @@ bool playLevel(int levelNo, struct player currentPlayer) {
             }
                 
         } else { 
-            char* currentWord = generateWord();
-            char* currentWordMorse;
-            //printf("Word: %s\nMorse Code: %s\n", currentWord, (levelNo==1)?currentLetter.morse_Code:"HIDDEN");
+            char * currentWord = generateWord();
+            char * morseCodeWord = wordtoMorse(currentWord);
+            printf("Word: %s\nMorse Code: %s\n", currentWord, (levelNo==3)?morseCodeWord:"HIDDEN");
+            char* userInput = getMorseInput();
+            printf("You enterred: %c\n", characterFromMorse(userInput));
+            if(strcmp(userInput, morseCodeWord) == 0) {
+                currentPlayer.currentWins++;
+                currentPlayer.totalWins++;
+                printf("CORRECT, %d in a row\n", currentPlayer.currentWins);
+                if(currentPlayer.lives < 3) {
+                    currentPlayer.lives++;
+                    rgbLights(currentPlayer);
+                }
+                if(currentPlayer.currentWins >= 5) {
+                    if(levelNo >= 4) {
+                        printf("You Win!\n");
+                        printStats(currentPlayer);
+                        return true;
+                    } else {
+                        return playLevel(levelNo+1, currentPlayer);
+                    }
+                }
+            } else {
+                currentPlayer.lives--;
+                currentPlayer.currentWins = 0;
+                currentPlayer.totalLoses++;
+            //    rgbLights(currentPlayer);
+                if(currentPlayer.lives <= 0) {
+                    printf("Game Over\n");
+                    printStats(currentPlayer);
+                    return false;
+                }
+            }
         }
     }
     return true;
@@ -373,22 +416,6 @@ bool selectLevel() {
     return true;
 
 }
-
-
-char* wordtoMorse(char* word){
-    char* morse_word = malloc(sizeof(char)*100);
-    
-    for(int i = 0; i < 4; i++){
-        strcat(morse_word,letterGetter(word[i]).morse_Code);
-        if(i < 3)
-            strcat(morse_word," ");
-    }
-    return morse_word;
-} 
-
-
-
-
 
 void rgbLights(struct player p){
     if(p.lives==3)
@@ -436,7 +463,7 @@ int main() {
     timer_hw->dbgpause = 0; //this is just here for the timer to work properly when debugging with openocd. It can be removed when not in debug mode
     stdio_init_all();              // Initialise all basic IO
     watchdog_reboot(0, 0, 0x7fffff);
-    watchdog_enable(0x7fffff, true);
+    watchdog_enable(0x7fffff, false);
     watchdog_start_tick(12);
     main_asm();
 
