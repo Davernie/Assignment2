@@ -112,35 +112,10 @@ struct letter newLetter(char letter, char *morse_Code){
     return new;
 };
 
-struct number{
-    char number;
-    char *morse_Code;
-};
-
-struct number newNumber(char number, char *morse_Code){
-    struct number new;
-    new.number = number;
-    new.morse_Code = morse_Code;
-    return new;
-};
 
 
-struct letter letterArr[26];
-struct number numberArr[8];
+struct letter letterArr[36];
 
-void new_Number_Array(){
-    numberArr[0]=newNumber('0', "-----");
-    numberArr[1]=newNumber('1', ".----");
-    numberArr[2]=newNumber('2', "..---");
-    numberArr[3]=newNumber('3', "...--");
-    numberArr[4]=newNumber('4', "....-");
-    numberArr[5]=newNumber('5', ".....");
-    numberArr[6]=newNumber('6', "-....");
-    numberArr[7]=newNumber('7', "--...");
-    numberArr[8]=newNumber('8', "---..");
-    numberArr[9]=newNumber('9', "----.");
-
-}
 void new_Letter_Array(){
     // A
     letterArr[0] = newLetter('A', ".-");
@@ -194,11 +169,24 @@ void new_Letter_Array(){
     letterArr[24] = newLetter('Y', "-.--");
     // Z
     letterArr[25] = newLetter('Z', "--..");
+    // 0-9
+    letterArr[26]=newLetter('0', "-----");
+    letterArr[27]=newLetter('1', ".----");
+    letterArr[28]=newLetter('2', "..---");
+    letterArr[29]=newLetter('3', "...--");
+    letterArr[30]=newLetter('4', "....-");
+    letterArr[31]=newLetter('5', ".....");
+    letterArr[32]=newLetter('6', "-....");
+    letterArr[33]=newLetter('7', "--...");
+    letterArr[34]=newLetter('8', "---..");
+    letterArr[35]=newLetter('9', "----.");
 };
 
 struct letter letterGetter (char letter) {
-    int letterIndex = (int) letter - 65;
-    return letterArr[letterIndex];
+    int letterIndex = (int) letter;
+    if(letterIndex < 65)
+        return letterArr[letterIndex - 22];
+    return letterArr[letterIndex - 65];
 }
 
 void displayInfo(struct player p, struct letter l) {
@@ -289,7 +277,7 @@ char* getMorse() {
 
 char characterFromMorse(char* userInput) {
     int i;
-    for(i = 0; i < 26; i++) {
+    for(i = 0; i < 36; i++) {
         if(strcmp(userInput, letterArr[i].morse_Code) == 0) {
             return letterArr[i].letter;
         }
@@ -319,12 +307,17 @@ char* wordtoMorse(char* word){
 } 
 
 bool playLevel(int levelNo, struct player currentPlayer) {
+    srand((int)time(NULL));
     printf("\nPLAYING LEVEL %d\n", levelNo);
     while(true) {   // run this until we return
         printf("Lives: %d\n", currentPlayer.lives);
         //rgbLights(currentPlayer);
         if(levelNo <= 2) {
-            char currentChar = (rand() % 26) + 'A';
+            char currentChar = (rand() % 36);
+            if((int)currentChar < 26)
+                currentChar = currentChar + 'A';
+            else 
+                currentChar = (currentChar-26) + '0';
             struct letter currentLetter = letterGetter(currentChar);
             printf("Letter: %c\nMorse Code: %s\n", currentChar, (levelNo==1)?currentLetter.morse_Code:"HIDDEN");
             char* userInput = getMorseInput();
@@ -468,7 +461,7 @@ int main() {
     main_asm();
 
     new_Letter_Array();
-    new_Number_Array();
+
     //testMorseInput();
 
 //    char * userInput = getMorseInput();
