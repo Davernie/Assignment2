@@ -170,22 +170,22 @@ void new_Letter_Array(){
     // Z
     letterArr[25] = newLetter('Z', "--..");
     // 0-9
-    numberArr[26]=newNumber('0', "-----");
-    numberArr[27]=newNumber('1', ".----");
-    numberArr[28]=newNumber('2', "..---");
-    numberArr[29]=newNumber('3', "...--");
-    numberArr[30]=newNumber('4', "....-");
-    numberArr[31]=newNumber('5', ".....");
-    numberArr[32]=newNumber('6', "-....");
-    numberArr[33]=newNumber('7', "--...");
-    numberArr[34]=newNumber('8', "---..");
-    numberArr[35]=newNumber('9', "----.");
+    letterArr[26]=newLetter('0', "-----");
+    letterArr[27]=newLetter('1', ".----");
+    letterArr[28]=newLetter('2', "..---");
+    letterArr[29]=newLetter('3', "...--");
+    letterArr[30]=newLetter('4', "....-");
+    letterArr[31]=newLetter('5', ".....");
+    letterArr[32]=newLetter('6', "-....");
+    letterArr[33]=newLetter('7', "--...");
+    letterArr[34]=newLetter('8', "---..");
+    letterArr[35]=newLetter('9', "----.");
 };
 
 struct letter letterGetter (char letter) {
     int letterIndex = (int) letter;
     if(letterIndex < 65)
-        return letterArr[letterIndex - 22]
+        return letterArr[letterIndex - 22];
     return letterArr[letterIndex - 65];
 }
 
@@ -307,6 +307,7 @@ char* wordtoMorse(char* word){
 } 
 
 bool playLevel(int levelNo, struct player currentPlayer) {
+    srand((int)time(NULL));
     printf("\nPLAYING LEVEL %d\n", levelNo);
     while(true) {   // run this until we return
         printf("Lives: %d\n", currentPlayer.lives);
@@ -314,9 +315,9 @@ bool playLevel(int levelNo, struct player currentPlayer) {
         if(levelNo <= 2) {
             char currentChar = (rand() % 36);
             if((int)currentChar < 26)
-                currentChar = currentChar + 'A'
+                currentChar = currentChar + 'A';
             else 
-                currentChar = currentChar + '0'
+                currentChar = (currentChar-26) + '0';
             struct letter currentLetter = letterGetter(currentChar);
             printf("Letter: %c\nMorse Code: %s\n", currentChar, (levelNo==1)?currentLetter.morse_Code:"HIDDEN");
             char* userInput = getMorseInput();
