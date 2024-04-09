@@ -14,7 +14,7 @@ const char* LEVEL_ONE = "-----";
 const char* LEVEL_TWO = ".----";
 const char* LEVEL_THREE = "..---";
 const char* LEVEL_FOUR = "...--";
-const char* WORD_LIST[] = {"come", "get", "give", "go", "keep", "let", "make", "put"};
+const char* WORD_LIST[] = {"come", "gets", "give", "gone", "keep", "lets", "make", "puts"};
 const int WORD_LIST_LEN = 8;
 
 // Must declare the main assembly entry point before use.
@@ -81,6 +81,8 @@ struct player
     int currentLevel;
     int completeLevels;
     int currentWins;
+    int totalWins;
+    int totalLoses;
     bool gameComplete;
 };
 void playerReset(struct player * player){
@@ -88,6 +90,8 @@ void playerReset(struct player * player){
     player->currentLevel = 0;
     player->completeLevels = 0;
     player->currentWins = 0;
+    player->totalWins = 0;
+    player->totalLoses = 0;
     player->gameComplete = false;
 }
 
@@ -113,8 +117,35 @@ struct letter newLetter(char letter, char *morse_Code){
 
 
 
-struct letter letterArr[26];
+struct number{
+    char number;
+    char *morse_Code;
+};
 
+struct number newNumber(char number, char *morse_Code){
+    struct number new;
+    new.number = number;
+    new.morse_Code = morse_Code;
+    return new;
+};
+
+
+struct letter letterArr[26];
+struct number numberArr[8];
+
+void new_Number_Array(){
+    numberArr[0]=newNumber('0', "-----");
+    numberArr[1]=newNumber('1', ".----");
+    numberArr[2]=newNumber('2', "..---");
+    numberArr[3]=newNumber('3', "...--");
+    numberArr[4]=newNumber('4', "....-");
+    numberArr[5]=newNumber('5', ".....");
+    numberArr[6]=newNumber('6', "-....");
+    numberArr[7]=newNumber('7', "--...");
+    numberArr[8]=newNumber('8', "---..");
+    numberArr[9]=newNumber('9', "----.");
+
+}
 void new_Letter_Array(){
     // A
     letterArr[0] = newLetter('A', ".-");
@@ -265,7 +296,7 @@ char* getMorse() {
             strcat(morse_sequence, "-");
             start_t = clock();//reset the timer
         } else {
-            end_t = clock() - button_press_duration;
+            end_t = clock();
             if ((end_t - start_t) >= SPACE_DURATION) {
                 space = 1;
             }
@@ -284,10 +315,16 @@ char characterFromMorse(char* userInput) {
             return letterArr[i].letter;
         }
     }
-    // Return ? character if no match found
-    return '?';
+    // Return space character if no match found
+    return ' ';
 }
 
+//Generate Word, take a word from a list
+char* generateWord(){
+
+    int index = rand() % WORD_LIST_LEN;
+    return WORD_LIST[index];
+}
 
 bool playLevel(int levelNo) {
     printf("\nPLAYING LEVEL %d\n", levelNo);
@@ -304,9 +341,11 @@ bool playLevel(int levelNo) {
                 rgbLights(currentPlayer);
             }
             currentPlayer.currentWins++;
+            currentPlayer.totalWins++;
             if(currentPlayer.currentWins >= 5) {
                 if(levelNo >= 4) {
                     printf("You Win!\n");
+                    printStats(currentPlayer);
                     return true;
                 } else {
                     return playLevel(levelNo+1);
@@ -314,9 +353,12 @@ bool playLevel(int levelNo) {
             }
         } else {
             currentPlayer.lives--;
+            currentPlayer.currentWins = 0;
+            currentPlayer.totalLoses++:
             rgbLights(currentPlayer);
             if(currentPlayer.lives <= 0) {
                 printf("Game Over\n");
+                printStats(currentPlayer);
                 return false;
             }
         }
@@ -325,30 +367,6 @@ bool playLevel(int levelNo) {
         char* currentWord = generateWord();
         char* currentWordMorse;
         printf("Word: %s\nMorse Code: %s\n", currentWord, (levelNo==1)?currentLetter.morse_Code:"HIDDEN");
-        char* userInput = getMorse();
-        printf("You enterred: %c\n", characterFromMorse(userInput));
-        if(strcmp(userInput, currentWordMorse) == 0) {
-            if(currentPlayer.lives < 3) {
-                currentPlayer.lives++;
-                rgbLights(currentPlayer);
-            }
-            currentPlayer.currentWins++;
-            if(currentPlayer.currentWins >= 5) {
-                if(levelNo >= 4) {
-                    printf("You Win!\n");
-                    return true;
-                } else {
-                    return playLevel(levelNo+1);
-                }
-            }
-        } else {
-            currentPlayer.lives--;
-            rgbLights(currentPlayer);
-            if(currentPlayer.lives <= 0) {
-                printf("Game Over\n");
-                return false;
-            }
-        }
     }
     return true;
 }
@@ -371,6 +389,18 @@ bool selectLevel() {
     return true;
 
 }
+
+
+char* wordtoMorse(char* word){
+    char* morse_word = malloc(sizeof(char)*100);
+    
+    for(int i = 0; i < 4; i++){
+        strcat(morse_word,letterGetter(word[i]).morse_Code);
+        if(i < 3)
+            strcat(morse_word," ");
+    }
+    return morse_word;
+} 
 
 
 
@@ -400,11 +430,18 @@ void rgbOff()
     put_pixel(urgb_u32(0x00, 0x00, 0x00));
 }
 
+
 void testMorseInput() {
     while(true) {
         char currentChar = gpio_get_next_input();
         printf("%c", currentChar);
     }
+
+void printStats(struct player p){
+    printf("Total Correct Answers: %d\n", p.totalWins);
+    printf("Total Incorrect Answers: %d\n", p.totalLoses);
+    printf("Accuracy: %.03f\n", ((float)p.totalWins) / ((float)(p.totalWins + p.totalLoses)));
+
 }
 
 /*
