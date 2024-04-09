@@ -110,8 +110,34 @@ struct letter newLetter(char letter, char *morse_Code){
     return new;
 };
 
-struct letter letterArr[26];
+struct number{
+    char number;
+    char *morse_Code;
+};
 
+struct number newNumber(char number, char *morse_Code){
+    struct number new;
+    new.number = number;
+    new.morse_Code = morse_Code;
+    return new;
+};
+
+struct letter letterArr[26];
+struct number numberArr[8];
+
+void new_Number_Array(){
+    numberArr[0]=newNumber('0', "-----");
+    numberArr[1]=newNumber('1', ".----");
+    numberArr[2]=newNumber('2', "..---");
+    numberArr[3]=newNumber('3', "...--");
+    numberArr[4]=newNumber('4', "....-");
+    numberArr[5]=newNumber('5', ".....");
+    numberArr[6]=newNumber('6', "-....");
+    numberArr[7]=newNumber('7', "--...");
+    numberArr[8]=newNumber('8', "---..");
+    numberArr[9]=newNumber('9', "----.");
+
+}
 void new_Letter_Array(){
     // A
     letterArr[0] = newLetter('A', ".-");
@@ -195,10 +221,10 @@ void displayWelcome() {
 
 
 char* getMorse() {
-    const int DOT_DURATION = 500;
-    const int DASH_DURATION = 1500;
-    const int SPACE_DURATION = 1000;
-    const int COMPLETE_DURATION = 2000;
+    const int DOT_DURATION = 500000;
+    const int DASH_DURATION = 1500000;
+    const int SPACE_DURATION = 1000000;
+    const int COMPLETE_DURATION = 2000000;
     static char morse_sequence[100];  // Initialize an empty string to hold the Morse code sequence
     int button_press_duration;
     clock_t start_t, end_t;
@@ -206,7 +232,7 @@ char* getMorse() {
     start_t = clock();
     while (1)
     {
-        button_press_duration = gpio_get_next_input;  // Get the duration of the button press
+        button_press_duration = gpio_get_next_input();  // Get the duration of the button press
         int space = 0;
 
         if (button_press_duration <= DOT_DURATION && button_press_duration >= 0) {
@@ -247,6 +273,12 @@ char characterFromMorse(char* userInput) {
     return '?';
 }
 
+//Generate Word, take a word from a list
+char* generateWord(){
+
+    int index = rand() % WORD_LIST_LEN;
+    return WORD_LIST[index];
+}
 
 bool playLevel(int levelNo) {
     struct player currentPlayer = *newPlayer();
@@ -328,20 +360,11 @@ bool selectLevel() {
 
 }
 
-//Generate Word, take a word from a list
-char* generateWord(){
-
-    int index = rand() % WORD_LIST_LEN;
-    return WORD_LIST[index];
-}
-
 char* wordtoMorse(char* word){
     char* morse_word = malloc(sizeof(char)*40);
     
     for(int i = 0; i < 6; i++){
-        strcat(morse_word,letterGetter(word[i]).morse_Code)
-        
-    
+        strcat(morse_word,letterGetter(word[i]).morse_Code);
     }
     return morse_word;
 }
