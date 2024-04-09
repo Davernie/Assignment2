@@ -316,9 +316,8 @@ char* wordtoMorse(char* word){
     
     for(int i = 0; i < 4; i++){
         strcat(morse_word,letterGetter(word[i]).morse_Code);
-        strcat(morse_word," ");
-        
-    
+        if(i < 3)
+            strcat(morse_word," ");
     }
     return morse_word;
 }
