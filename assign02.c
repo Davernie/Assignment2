@@ -320,6 +320,7 @@ char* wordtoMorse(char* word){
 
 bool playLevel(int levelNo, struct player currentPlayer) {
     printf("\nPLAYING LEVEL %d\n", levelNo);
+    currentPlayer.currentWins = 0;
     while(true) {   // run this until we return
         printf("Lives: %d\n", currentPlayer.lives);
         //rgbLights(currentPlayer);
@@ -463,7 +464,7 @@ int main() {
     timer_hw->dbgpause = 0; //this is just here for the timer to work properly when debugging with openocd. It can be removed when not in debug mode
     stdio_init_all();              // Initialise all basic IO
     watchdog_reboot(0, 0, 0x7fffff);
-    watchdog_enable(0x7fffff, false);
+    watchdog_enable(0x7fffff, true);
     watchdog_start_tick(12);
     main_asm();
 
