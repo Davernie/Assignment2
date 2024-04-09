@@ -14,6 +14,8 @@ const char* LEVEL_ONE = "-----";
 const char* LEVEL_TWO = ".----";
 const char* LEVEL_THREE = "..---";
 const char* LEVEL_FOUR = "...--";
+const char* WORD_LIST[] = {"come", "get", "give", "go", "keep", "let", "make", "put"};
+const int WORD_LIST_LEN = 8;
 
 // Must declare the main assembly entry point before use.
 void main_asm();
@@ -278,7 +280,7 @@ bool playLevel(int levelNo) {
         }
             
     } else { 
-        char* currentWord;
+        char* currentWord = generateWord();
         char* currentWordMorse;
         printf("Word: %s\nMorse Code: %s\n", currentWord, (levelNo==1)?currentLetter.morse_Code:"HIDDEN");
     }
@@ -302,6 +304,23 @@ bool selectLevel() {
 
 }
 
+//Generate Word, take a word from a list
+char* generateWord(){
+
+    int index = rand() % WORD_LIST_LEN;
+    return WORD_LIST[index];
+}
+
+char* wordtoMorse(char* word){
+    char* morse_word = malloc(sizeof(char)*40);
+    
+    for(int i = 0; i < 6; i++){
+        strcat(morse_word,letterGetter(word[i]).morse_Code)
+        
+    
+    }
+    return morse_word;
+}
 
 
 
