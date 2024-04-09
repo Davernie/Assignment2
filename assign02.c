@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include "pico/stdlib.h"
 #include "hardware/gpio.h"
 #include <time.h>
@@ -6,9 +7,12 @@
 #include <string.h>
 #include "hardware/pio.h"
 #include "hardware/clocks.h"
-//#include "ws2812.pio"
 #include "hardware/watchdog.h"
-#include <stdlib.h>
+#include "ws2812.pio.h"
+
+#define IS_RGBW true                    // Will use RGBW format
+#define NUM_PIXELS 1                    // There is 1 WS2812 device in the chain
+#define WS2812_PIN 28                   // The GPIO pin that the WS2812 connected to
 
 const char* LEVEL_ONE = "-----";
 const char* LEVEL_TWO = ".----";
@@ -22,8 +26,18 @@ void main_asm();
 
 int gpio_get_next_input();
 
-static inline void put_pixel(uint32_t pixel_grb) {
+//pushes 32bit color to PIO block
+static inline void put_pixel(uint32_t pixel_grb) 
+{
     pio_sm_put_blocking(pio0, 0, pixel_grb << 8u);
+}
+
+//converts to a 32 bit unsigned rgb color
+static inline uint32_t urgb_u32(uint8_t r, uint8_t g, uint8_t b) 
+{
+    return  ((uint32_t) (r) << 8)  |
+            ((uint32_t) (g) << 16) |
+            (uint32_t) (b);
 }
 
 
@@ -37,11 +51,6 @@ static inline void put_pixel(uint32_t pixel_grb) {
  * @param b     The 8-bit intensity value for the blue component
  * @return uint32_t Returns the resulting composit 32-bit RGB value
  */
-static inline uint32_t urgb_u32(uint8_t r, uint8_t g, uint8_t b) {
-    return  ((uint32_t) (r) << 8)  |
-            ((uint32_t) (g) << 16) |
-            (uint32_t) (b);
-}
 
 // Initialise a GPIO pin – see SDK for detail on gpio_init()
 void asm_gpio_init(uint pin) {
@@ -232,47 +241,31 @@ char* getMorseInput() {
     return userInput;
 }
 
-char* getMorse() {
-    const int DOT_DURATION = 500000;
-    const int DASH_DURATION = 1500000;
-    const int SPACE_DURATION = 1000000;
-    const int COMPLETE_DURATION = 2000000;
-    static char morse_sequence[100];  // Initialize an empty string to hold the Morse code sequence
-    int button_press_duration;
-    clock_t start_t, end_t;
+void updateLights(int lives)
+{
+        switch(lives)
+        {
+            case 0:
+                put_pixel(urgb_u32(0x7f, 0x00, 0x00));//RED 
+                break;
+            case 1:
+                put_pixel(urgb_u32(0x7f, 0x32, 0x00));//ORANGE  
+                break;
+            case 2:
+                put_pixel(urgb_u32(0xFF, 0xFF, 0x00));//YELLOW
+                break;
+            case 3:
+                put_pixel(urgb_u32(0x00, 0x7f, 0x00));//GREEN 
+                break;
+            default:
+                put_pixel(urgb_u32(0x00, 0x00, 0x7f));//Blue 
+                break;
+        }
+}
 
-    start_t = clock();
-    while (1)
-    {
-        button_press_duration = gpio_get_next_input();  // Get the duration of the button press
-        int space = 0;
-
-        if (button_press_duration <= DOT_DURATION && button_press_duration >= 0) {
-            if(space == 1){
-                printf("Adding space\n");
-                strcat(morse_sequence, " ");
-                space = 0;
-            } else 
-                strcat(morse_sequence, ".");
-            start_t = clock(); //reset the timer
-        } else if (button_press_duration <= DASH_DURATION) {
-            if(space == 1){
-                strcat(morse_sequence, " ");
-                space = 0;
-            }
-            strcat(morse_sequence, "-");
-            start_t = clock();//reset the timer
-        } else {
-            end_t = clock();
-            if ((end_t - start_t) >= SPACE_DURATION) {
-                space = 1;
-            }
-            if ((end_t - start_t) >= COMPLETE_DURATION) {
-                printf("Morse sequence complete: %s\n", morse_sequence);
-                return morse_sequence;
-            }  
-        }         
-    }
+void rgbOff()
+{
+    put_pixel(urgb_u32(0x00, 0x00, 0x00));
 }
 
 char characterFromMorse(char* userInput) {
@@ -283,7 +276,7 @@ char characterFromMorse(char* userInput) {
         }
     }
     // Return space character if no match found
-    return ' ';
+    return '?';
 }
 
 //Generate Word, take a word from a list
@@ -311,7 +304,7 @@ bool playLevel(int levelNo, struct player currentPlayer) {
     printf("\nPLAYING LEVEL %d\n", levelNo);
     while(true) {   // run this until we return
         printf("Lives: %d\n", currentPlayer.lives);
-        //rgbLights(currentPlayer);
+        updateLights(currentPlayer.lives);
         if(levelNo <= 2) {
             char currentChar = (rand() % 36);
             if((int)currentChar < 26)
@@ -328,7 +321,7 @@ bool playLevel(int levelNo, struct player currentPlayer) {
                 printf("CORRECT, %d in a row\n", currentPlayer.currentWins);
                 if(currentPlayer.lives < 3) {
                     currentPlayer.lives++;
-                    rgbLights(currentPlayer);
+                    updateLights(currentPlayer.lives);
                 }
                 if(currentPlayer.currentWins >= 5) {
                     if(levelNo >= 4) {
@@ -343,7 +336,7 @@ bool playLevel(int levelNo, struct player currentPlayer) {
                 currentPlayer.lives--;
                 currentPlayer.currentWins = 0;
                 currentPlayer.totalLoses++;
-            //    rgbLights(currentPlayer);
+                updateLights(currentPlayer.lives);
                 if(currentPlayer.lives <= 0) {
                     printf("Game Over\n");
                     printStats(currentPlayer);
@@ -363,7 +356,7 @@ bool playLevel(int levelNo, struct player currentPlayer) {
                 printf("CORRECT, %d in a row\n", currentPlayer.currentWins);
                 if(currentPlayer.lives < 3) {
                     currentPlayer.lives++;
-                    rgbLights(currentPlayer);
+                    updateLights(currentPlayer.lives);
                 }
                 if(currentPlayer.currentWins >= 5) {
                     if(levelNo >= 4) {
@@ -378,7 +371,7 @@ bool playLevel(int levelNo, struct player currentPlayer) {
                 currentPlayer.lives--;
                 currentPlayer.currentWins = 0;
                 currentPlayer.totalLoses++;
-            //    rgbLights(currentPlayer);
+                updateLights(currentPlayer.lives);
                 if(currentPlayer.lives <= 0) {
                     printf("Game Over\n");
                     printStats(currentPlayer);
@@ -410,30 +403,6 @@ bool selectLevel() {
 
 }
 
-void rgbLights(struct player p){
-    if(p.lives==3)
-    {
-        put_pixel(urgb_u32(0x00, 0xFF, 0x00)); //green
-    }
-    else if(p.lives==2)
-    {
-        put_pixel(urgb_u32(0xFF, 0xFF, 0x00)); //yellow
-    }
-    else if(p.lives==1)
-    {
-        put_pixel(urgb_u32(0xFF, 0x80, 0x00)); //orange
-    }
-    else if(p.lives==0)
-    {
-        put_pixel(urgb_u32(0xFF, 0x00, 0x00));//red
-    }
-}
-
-void rgbOff()
-{
-    put_pixel(urgb_u32(0x00, 0x00, 0x00));
-}
-
 
 void testMorseInput() {
     while(true) {
@@ -455,6 +424,9 @@ void printStats(struct player p){
 int main() {
     timer_hw->dbgpause = 0; //this is just here for the timer to work properly when debugging with openocd. It can be removed when not in debug mode
     stdio_init_all();              // Initialise all basic IO
+    PIO pio = pio0;
+    uint offset = pio_add_program(pio, &ws2812_program);
+    ws2812_program_init(pio, 0, offset, WS2812_PIN, 800000, IS_RGBW);
     watchdog_reboot(0, 0, 0x7fffff);
     watchdog_enable(0x7fffff, false);
     watchdog_start_tick(12);
@@ -467,6 +439,7 @@ int main() {
 //    char * userInput = getMorseInput();
 //    printf("%s", userInput);
 
+    updateLights(5);
     displayWelcome();
     while(!selectLevel());
 
