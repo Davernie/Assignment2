@@ -81,6 +81,8 @@ struct player
     int currentLevel;
     int completeLevels;
     int currentWins;
+    int totalWins;
+    int totalLoses;
     bool gameComplete;
 };
 void playerReset(struct player * player){
@@ -88,6 +90,8 @@ void playerReset(struct player * player){
     player->currentLevel = 0;
     player->completeLevels = 0;
     player->currentWins = 0;
+    player->totalWins = 0;
+    player->totalLoses = 0;
     player->gameComplete = false;
 }
 
@@ -262,9 +266,11 @@ bool playLevel(int levelNo) {
                 rgbLights(currentPlayer);
             }
             currentPlayer.currentWins++;
+            currentPlayer.totalWins++;
             if(currentPlayer.currentWins >= 5) {
                 if(levelNo >= 4) {
                     printf("You Win!\n");
+                    printStats(currentPlayer);
                     return true;
                 } else {
                     return playLevel(levelNo+1);
@@ -272,9 +278,12 @@ bool playLevel(int levelNo) {
             }
         } else {
             currentPlayer.lives--;
+            currentPlayer.currentWins = 0;
+            currentPlayer.totalLoses++:
             rgbLights(currentPlayer);
             if(currentPlayer.lives <= 0) {
                 printf("Game Over\n");
+                printStats(currentPlayer);
                 return false;
             }
         }
@@ -344,7 +353,7 @@ char* wordtoMorse(char* word){
     
     }
     return morse_word;
-}
+} 
 
 
 
@@ -371,6 +380,12 @@ void rgbLights(struct player p){
 void rgbOff()
 {
     put_pixel(urgb_u32(0x00, 0x00, 0x00));
+}
+
+void printStats(struct player p){
+    printf("Total Correct Answers: %d\n", p.totalWins);
+    printf("Total Incorrect Answers: %d\n", p.totalLoses);
+    printf("Accuracy: %.03f\n", ((float)p.totalWins) / ((float)(p.totalWins + p.totalLoses)));
 }
 
 /*
