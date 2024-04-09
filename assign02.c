@@ -222,7 +222,7 @@ char* getMorse() {
             strcat(morse_sequence, "-");
             start_t = clock();//reset the timer
         } else {
-            end_t = clock();
+            end_t = clock() - button_press_duration;
             if ((end_t - start_t) >= SPACE_DURATION) {
                 space = 1;
             }
@@ -241,8 +241,8 @@ char characterFromMorse(char* userInput) {
             return letterArr[i].letter;
         }
     }
-    // Return space character if no match found
-    return ' ';
+    // Return ? character if no match found
+    return '?';
 }
 
 
@@ -281,6 +281,30 @@ bool playLevel(int levelNo) {
         char* currentWord;
         char* currentWordMorse;
         printf("Word: %s\nMorse Code: %s\n", currentWord, (levelNo==1)?currentLetter.morse_Code:"HIDDEN");
+        char* userInput = getMorse();
+        printf("You enterred: %c\n", characterFromMorse(userInput));
+        if(strcmp(userInput, currentWordMorse) == 0) {
+            if(currentPlayer.lives < 3) {
+                currentPlayer.lives++;
+                rgbLights(currentPlayer);
+            }
+            currentPlayer.currentWins++;
+            if(currentPlayer.currentWins >= 5) {
+                if(levelNo >= 4) {
+                    printf("You Win!\n");
+                    return true;
+                } else {
+                    return playLevel(levelNo+1);
+                }
+            }
+        } else {
+            currentPlayer.lives--;
+            rgbLights(currentPlayer);
+            if(currentPlayer.lives <= 0) {
+                printf("Game Over\n");
+                return false;
+            }
+        }
     }
     return true;
 }
