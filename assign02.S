@@ -21,6 +21,9 @@
 .equ GPIO_INPUT_PRESS_MASK, 0x00400000          @Bit-22 for falling edge event on GP21
 .equ GPIO_INPUT_RELEASE_MASK, 0x00800000        
 
+.equ TIME_BEFORE_DASH, 400000
+.equ TIME_BEFORE_SPACE, 1000000
+.equ TIME_BEFORE_END, 2000000           
 
 @ Entry point to the ASM portion of the program
 main_asm:
@@ -36,6 +39,7 @@ inf_loop:
 
 install_gpio_interrupt:
     PUSH {LR}                                   @ Push link register to stack
+
     LDR  R2, =(PPB_BASE + M0PLUS_VTOR_OFFSET)   @ Load R2 with Vector table offset
     LDR  R1, [R2]                               @ load from that address into R1
     MOVS R2, #GPIO_ISR_OFFSET                   @ load the GPIO isr offset into R2
@@ -74,16 +78,63 @@ initialise_led:
 @ halts the execution until the user enters something
 gpio_get_next_input:
     PUSH {R4-R5, LR}
+
+    LDR  R4, =(TIMER_BASE + TIMER_TIMELR_OFFSET)@ address of lower half of current time
+    LDR  R4, [R4]                               @ R5 now holds the lower half of the current time
+    LDR  R5, =time_button_last_released
+    STR  R4, [R5]
+
 .LWhileNoNewInput:
+    LDR  R5, =time_button_last_released
+    LDR  R5, [R5]
+    LDR  R4, =(TIMER_BASE + TIMER_TIMELR_OFFSET)@ address of lower half of current time
+    LDR  R4, [R4]                               @ R5 now holds the lower half of the current time
+    SUBS R4, R5
+    LDR  R5, =TIME_BEFORE_SPACE
+    CMP  R4, R5
+    BGE  .LReturnSpace
     LDR  R4, =input_status                      @ check whether there is a new input (value would be set by the interrupt)
-    LDR  R4, [R4]
+    LDR  R4, [R4]                               
     CMP  R4, #1                                 @ 
     BNE  .LWhileNoNewInput                      @ if there is a new input:
-    LDR  R4, =time_button_was_held
-    LDR  R0, [R4]                               @ return value
+
     LDR  R4, =input_status
     MOVS R5, #0
-    LDR  R5, [R4]
+    STR  R5, [R4]                               @ return to no pending input
+
+    @figure out if it's a space
+@    LDR  R5, =time_button_last_released
+@    LDR  R5, [R5]
+@    LDR  R4, =(TIMER_BASE + TIMER_TIMELR_OFFSET)@ address of lower half of current time
+@    LDR  R4, [R4]                               @ R5 now holds the lower half of the current time
+@    SUBS R4, R5
+@    LDR  R5, =time_button_was_held
+@    LDR  R5, [R5]
+@    SUBS R4, R5
+@    LDR  R5, =TIME_BEFORE_SPACE
+@    CMP  R4, R5
+@    BGE  .LReturnSpace
+
+    @If we reach this part it's either a dot or dash
+    LDR  R5, =time_button_was_held
+    LDR  R5, [R5]
+    LDR  R4, =TIME_BEFORE_DASH
+    CMP  R5, R4
+    BGE  .LReturnDash
+
+    @@ return dot
+    MOVS R0, '.'
+    BAL  .LEndInputWait
+
+.LReturnDash:
+    MOVS R0, '-'
+    BAL  .LEndInputWait
+
+.LReturnSpace:
+    MOVS R0, ' '
+    BAL  .LEndInputWait
+
+.LEndInputWait:
 
     POP  {R4-R5, PC}
 
@@ -91,6 +142,13 @@ gpio_get_next_input:
     .type gpio_press_handler %function
 gpio_press_handler:
     PUSH {R4-R6, LR}
+
+    LDR  R4, =(TIMER_BASE + TIMER_TIMELR_OFFSET)@ address of lower half of current time
+    LDR  R4, [R4]                               @ R5 now holds the lower half of the current time
+    LDR  R5, =time_button_last_released
+    STR  R4, [R5]
+
+    
     LDR  R0, =GPIO_INPUT_BUTTON
     BL   asm_gpio_get
     CMP  R0, GPIO_BUTTON_VAL_ON     @ on means falling edge
@@ -133,6 +191,8 @@ time_at_button_press:
 time_button_was_held:
     .word 0
 input_status:
+    .word 0
+time_button_last_released:
     .word 0
 
 test_string:

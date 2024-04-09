@@ -114,6 +114,9 @@ struct letter newLetter(char letter, char *morse_Code){
     return new;
 };
 
+
+
+
 struct number{
     char number;
     char *morse_Code;
@@ -125,6 +128,7 @@ struct number newNumber(char number, char *morse_Code){
     new.morse_Code = morse_Code;
     return new;
 };
+
 
 struct letter letterArr[26];
 struct number numberArr[8];
@@ -202,6 +206,24 @@ struct letter letterGetter (char letter) {
     return letterArr[letterIndex];
 }
 
+//Generate Word, take a word from a list
+char* generateWord(){
+
+    int index = rand() % WORD_LIST_LEN;
+    return WORD_LIST[index];
+}
+
+char* wordtoMorse(char* word){
+    char* morse_word = malloc(sizeof(char)*40);
+    
+    for(int i = 0; i < 6; i++){
+        strcat(morse_word,letterGetter(word[i]).morse_Code);
+        
+    
+    }
+    return morse_word;
+}
+
 void displayInfo(struct player p, struct letter l) {
     printf("Level -  %d\n", p.currentLevel);
     printf("Lives: %d\n", p.lives);
@@ -223,6 +245,25 @@ void displayWelcome() {
     printf("                  \"...--\"  - LEVEL 04\n");
 }
 
+char* getMorseInput() {
+    char * userInput = malloc(40*sizeof(char));
+    userInput[0] = '\0';
+    bool endOfString = false;
+    char currentChar = '\0', prevChar = '\0';
+    printf("Enter morse code: ");
+    while(!endOfString) {
+        prevChar = currentChar;
+        currentChar = gpio_get_next_input();
+        printf("%c", currentChar);
+        if(prevChar == ' ' && currentChar == ' ') 
+            endOfString = true;
+        else
+            strncat(userInput, &currentChar, 1);
+
+    }
+    userInput[strlen(userInput)-1]='\0'; //remove extra space from end
+    return userInput;
+}
 
 char* getMorse() {
     const int DOT_DURATION = 500000;
@@ -241,10 +282,11 @@ char* getMorse() {
 
         if (button_press_duration <= DOT_DURATION && button_press_duration >= 0) {
             if(space == 1){
+                printf("Adding space\n");
                 strcat(morse_sequence, " ");
                 space = 0;
-            }
-            strcat(morse_sequence, ".");
+            } else 
+                strcat(morse_sequence, ".");
             start_t = clock(); //reset the timer
         } else if (button_press_duration <= DASH_DURATION) {
             if(space == 1){
@@ -285,6 +327,7 @@ char* generateWord(){
 }
 
 bool playLevel(int levelNo) {
+    printf("\nPLAYING LEVEL %d\n", levelNo);
     struct player currentPlayer = *newPlayer();
     char currentChar = (rand() % 26) + 'A';
     struct letter currentLetter = letterGetter(currentChar);
@@ -330,7 +373,7 @@ bool playLevel(int levelNo) {
 
 bool selectLevel() {
     struct player currentPlayer = *newPlayer();
-    char* levelInput = getMorse();
+    char* levelInput = getMorseInput();
     if(strcmp(levelInput, LEVEL_ONE) == 0)
         playLevel(1);
     else if(strcmp(levelInput, LEVEL_TWO) == 0)
@@ -339,11 +382,14 @@ bool selectLevel() {
         playLevel(3);
     else if(strcmp(levelInput, LEVEL_FOUR) == 0)
         playLevel(4);
-    else
+    else {
+        printf("Invalid level code %s, try again\n", levelInput);
         return false;
+    }
     return true;
 
 }
+
 
 char* wordtoMorse(char* word){
     char* morse_word = malloc(sizeof(char)*100);
@@ -355,6 +401,7 @@ char* wordtoMorse(char* word){
     }
     return morse_word;
 } 
+
 
 
 
@@ -383,10 +430,18 @@ void rgbOff()
     put_pixel(urgb_u32(0x00, 0x00, 0x00));
 }
 
+
+void testMorseInput() {
+    while(true) {
+        char currentChar = gpio_get_next_input();
+        printf("%c", currentChar);
+    }
+
 void printStats(struct player p){
     printf("Total Correct Answers: %d\n", p.totalWins);
     printf("Total Incorrect Answers: %d\n", p.totalLoses);
     printf("Accuracy: %.03f\n", ((float)p.totalWins) / ((float)(p.totalWins + p.totalLoses)));
+
 }
 
 /*
@@ -396,9 +451,14 @@ int main() {
     timer_hw->dbgpause = 0; //this is just here for the timer to work properly when debugging with openocd. It can be removed when not in debug mode
     stdio_init_all();              // Initialise all basic IO
     watchdog_reboot(0, 0, 0x7fffff);
-    watchdog_enable(0x7fffff, false);
+    watchdog_enable(0x7fffff, true);
     watchdog_start_tick(12);
     main_asm();
+
+    //testMorseInput();
+
+//    char * userInput = getMorseInput();
+//    printf("%s", userInput);
 
     displayWelcome();
     while(!selectLevel());
